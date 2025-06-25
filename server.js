@@ -43,7 +43,7 @@ app.post('/api/contacto', async (req, res) => {
     const { nombre_completo, correo, telefono, mensaje, recaptchaToken  } = req.body;
  
     // 🔐 Validar reCAPTCHA
-    const secretKey = '6LdCj2wrAAAAAFPz7tDyU8qWx0hievLq4Bh3GPkN';
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
     const verificationUrl = `https://www.google.com/recaptcha/api/siteverify`;
 
     const captchaResponse = await axios.post(
@@ -53,6 +53,7 @@ app.post('/api/contacto', async (req, res) => {
         response: recaptchaToken,
       })
     );
+console.log("Respuesta de Google reCAPTCHA:", captchaResponse.data);
 
     const { success, score, 'error-codes': errorCodes } = captchaResponse.data;
 
