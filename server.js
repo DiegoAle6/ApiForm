@@ -35,35 +35,53 @@ function validateContact(data) {
 }
 
 // RUTAS
+const axios = require('axios');
 
 // Ruta para guardar contacto
 app.post('/api/contacto', async (req, res) => {
   try {
-    const { nombre_completo, correo, telefono, mensaje } = req.body;
-    
-    // Validar datos
-    const errors = validateContact(req.body);
-    if (errors.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Datos inválidos',
-        errors: errors
+    const { nombre_completo, correo, telefono, mensaje, recaptchaToken  } = req.body;
+ 
+    // 🔐 Validar reCAPTCHA
+    const secretKey = '6LdCj2wrAAAAAFPz7tDyU8qWx0hievLq4Bh3GPkN';
+    const verificationUrl = `https://www.google.com/recaptcha/api/siteverify`;
+
+    const captchaResponse = await axios.post(
+      verificationUrl,
+      new URLSearchParams({
+        secret: secretKey,
+        response: recaptchaToken,
+      })
+    );
+
+    const { success, score, 'error-codes': errorCodes } = captchaResponse.data;
+
+    if (!success) {
+      return res.status(403).json({
+        success: false,
+        message: 'Fallo la validación de reCAPTCHA',
+        errors: errorCodes || [],
       });
     }
-    
-    // Insertar en la base de datos
+
+    // 🟢 Continuar con validación y guardado
+    const errors = validateContact({ nombre_completo, correo, telefono, mensaje });
+    if (errors.length > 0) {
+      return res.status(400).json({ success: false, message: 'Datos inválidos', errors });
+    }
+
     const query = `
       INSERT INTO Contacto (NombreCompleto, Correo, Telefono, Mensaje) 
       VALUES (@nombre_completo, @correo, @telefono, @mensaje)
     `;
-    
+
     const params = {
       nombre_completo: nombre_completo.trim(),
       correo: correo.trim().toLowerCase(),
       telefono: telefono.trim(),
-      mensaje: mensaje.trim()
+      mensaje: mensaje.trim(),
     };
-    
+
     const result = await executeQuery(query, params);
     
     res.status(201).json({
