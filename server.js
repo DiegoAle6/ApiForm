@@ -36,10 +36,28 @@ function validateContact(data) {
 
 // RUTAS
 const axios = require('axios');
+const Joi = require('joi');
+const contactSchema = require('./schemas/contactSchema');
 
 // Ruta para guardar contacto
 app.post('/api/contacto', async (req, res) => {
   try {
+        // Validar con Joi
+const { error, value } = contactSchema.validate(req.body, { abortEarly: false });
+if (error) {
+  const errors = error.details.map((d) => ({
+    campo: d.path.join('.'),
+    mensaje: d.message
+  }));
+
+  return res.status(400).json({
+    success: false,
+    message: 'Datos inválidos',
+    errors
+  });
+}
+
+
     const { nombre_completo, correo, telefono, mensaje, recaptchaToken  } = req.body;
  
     // 🔐 Validar reCAPTCHA
