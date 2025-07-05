@@ -1,45 +1,30 @@
-// hashPassword.js - Script para hashear la contraseña del usuario existente
-const bcrypt = require('bcrypt');
-const { executeQuery } = require('../database');
-require('dotenv').config();
+// Script para generar hash de contraseña
+// Ejecuta este código en Node.js para generar el hash correcto
 
-async function updatePasswordHash() {
-    try {
-        const plainPassword = '1234'; // La contraseña actual en texto plano
-        const saltRounds = 10;
-        
-        // Hashear la contraseña
-        const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
-        
-        console.log('Contraseña original:', plainPassword);
-        console.log('Contraseña hasheada:', hashedPassword);
-        
-        // Actualizar la contraseña en la base de datos
-        const query = `
-            UPDATE Usuarios 
-            SET PasswordHash = @hashedPassword 
-            WHERE Username = @username
-        `;
-        
-        const params = {
-            hashedPassword,
-            username: 'admin'
-        };
-        
-        const result = await executeQuery(query, params);
-        
-        if (result.rowsAffected[0] > 0) {
-            console.log('✅ Contraseña actualizada exitosamente');
-            console.log('Ahora puedes usar:');
-            console.log('Usuario: admin');
-            console.log('Contraseña: 1234');
-        } else {
-            console.log('❌ No se encontró el usuario para actualizar');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error al actualizar contraseña:', error);
-    }
+const bcrypt = require('bcrypt');
+
+async function generatePasswordHash() {
+  const password = 'admin123'; // Contraseña que quieres usar
+  const saltRounds = 10;
+  
+  try {
+    const hash = await bcrypt.hash(password, saltRounds);
+    console.log('Contraseña original:', password);
+    console.log('Hash generado:', hash);
+    
+    // Verificar que el hash funciona
+    const isValid = await bcrypt.compare(password, hash);
+    console.log('Verificación del hash:', isValid);
+    
+    return hash;
+  } catch (error) {
+    console.error('Error generando hash:', error);
+  }
 }
 
-updatePasswordHash();
+// Llamar a la función
+generatePasswordHash();
+
+// También puedes usar este hash directamente:
+// $2b$10$rOvwXSfPGNFvWQyGjUOUAOcZXBiHb7wZfyGlU7mJcP2n5KOqzJHiC
+// Contraseña: admin123

@@ -116,22 +116,22 @@ app.post('/api/contacto', async (req, res) => {
 
     const query = `
       INSERT INTO Contacto (NombreCompleto, Correo, Telefono, Mensaje) 
-      VALUES (@nombre_completo, @correo, @telefono, @mensaje)
+      VALUES (?, ?, ?, ?)
     `;
 
-    const params = {
-      nombre_completo: nombre_completo.trim(),
-      correo: correo.trim().toLowerCase(),
-      telefono: telefono.trim(),
-      mensaje: mensaje.trim(),
-    };
+    const params = [
+      nombre_completo.trim(),
+      correo.trim().toLowerCase(),
+      telefono.trim(),
+      mensaje.trim()
+    ];
 
     const result = await executeQuery(query, params);
     
     res.status(201).json({
       success: true,
       message: 'Contacto guardado exitosamente',
-      id: result.recordset ? result.recordset[0]?.Id : 'Insertado correctamente'
+      id: result.insertId || 'Insertado correctamente'
     });
     
   } catch (error) {
@@ -152,7 +152,7 @@ app.get('/api/dashboard/contactos', authMiddleware, async (req, res) => {
     
     res.json({
       success: true,
-      data: result.recordset
+      data: result
     });
     
   } catch (error) {
@@ -208,15 +208,15 @@ app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
   try {
     const queries = {
       total: 'SELECT COUNT(*) as total FROM Contacto',
-      hoy: `SELECT COUNT(*) as hoy FROM Contacto WHERE CAST(FechaRegistro AS DATE) = CAST(GETDATE() AS DATE)`,
-      semana: `SELECT COUNT(*) as semana FROM Contacto WHERE FechaRegistro >= DATEADD(week, -1, GETDATE())`,
-      mes: `SELECT COUNT(*) as mes FROM Contacto WHERE FechaRegistro >= DATEADD(month, -1, GETDATE())`
+      hoy: `SELECT COUNT(*) as hoy FROM Contacto WHERE DATE(FechaRegistro) = DATE(NOW())`,
+      semana: `SELECT COUNT(*) as semana FROM Contacto WHERE FechaRegistro >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`,
+      mes: `SELECT COUNT(*) as mes FROM Contacto WHERE FechaRegistro >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`
     };
 
     const results = {};
     for (const [key, query] of Object.entries(queries)) {
       const result = await executeQuery(query);
-      results[key] = result.recordset[0][key];
+      results[key] = result[0][key];
     }
 
     res.json({

@@ -17,18 +17,27 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Buscar usuario en la base de datos
-    const query = `SELECT * FROM Usuarios WHERE Username = @username`;
-    const result = await executeQuery(query, { username });
+    // CAMBIO: Query con parámetros posicionales para MySQL
+    const query = `SELECT * FROM Usuarios WHERE Username = ?`;
+    const result = await executeQuery(query, [username]);
 
-    if (result.recordset.length === 0) {
+    // CAMBIO: MySQL retorna el resultado directamente, no en recordset
+    if (!result || result.length === 0) {
       return res.status(401).json({ 
         success: false, 
         message: 'Usuario no encontrado' 
       });
     }
 
-    const user = result.recordset[0];
+    const user = result[0];
+
+    // Verificar que el usuario tenga la propiedad PasswordHash
+    if (!user || !user.PasswordHash) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Error en la estructura de datos del usuario' 
+      });
+    }
 
     // Verificar contraseña
     const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
@@ -52,13 +61,13 @@ router.post('/login', async (req, res) => {
       { expiresIn: '2h' }
     );
 
-    // Actualizar último acceso (opcional)
+    // CAMBIO: Actualizar último acceso con sintaxis MySQL
     const updateQuery = `
       UPDATE Usuarios 
-      SET UltimoAcceso = GETDATE() 
-      WHERE Id = @id
+      SET UltimoAcceso = NOW() 
+      WHERE Id = ?
     `;
-    await executeQuery(updateQuery, { id: user.Id });
+    await executeQuery(updateQuery, [user.Id]);
 
     // Respuesta exitosa
     res.json({ 
@@ -97,11 +106,12 @@ router.get('/verify', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Opcional: verificar que el usuario aún existe
-    const query = `SELECT Id, Username, Nombre, Rol FROM Usuarios WHERE Id = @id`;
-    const result = await executeQuery(query, { id: decoded.id });
+    // CAMBIO: Query con parámetros posicionales para MySQL
+    const query = `SELECT Id, Username, Nombre, Rol FROM Usuarios WHERE Id = ?`;
+    const result = await executeQuery(query, [decoded.id]);
 
-    if (result.recordset.length === 0) {
+    // CAMBIO: MySQL retorna el resultado directamente
+    if (!result || result.length === 0) {
       return res.status(401).json({ 
         success: false, 
         message: 'Usuario no encontrado' 
@@ -110,7 +120,7 @@ router.get('/verify', async (req, res) => {
 
     res.json({ 
       success: true, 
-      user: result.recordset[0] 
+      user: result[0] 
     });
 
   } catch (err) {

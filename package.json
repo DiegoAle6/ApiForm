@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "msnodesqlv8": "^4.5.0",
     "mssql": "^10.0.4",
+    "mysql2": "^3.14.1",
     "nodemailer": "^7.0.4"
   },
   "devDependencies": {
