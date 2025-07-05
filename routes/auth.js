@@ -21,8 +21,14 @@ router.post('/login', async (req, res) => {
     const query = `SELECT * FROM Usuarios WHERE Username = ?`;
     const result = await executeQuery(query, [username]);
 
+    console.log('=== DEBUG LOGIN ===');
+    console.log('Username buscado:', username);
+    console.log('Resultado de la query:', result);
+    console.log('Número de usuarios encontrados:', result ? result.length : 0);
+
     // CAMBIO: MySQL retorna el resultado directamente, no en recordset
     if (!result || result.length === 0) {
+      console.log('❌ Usuario no encontrado');
       return res.status(401).json({ 
         success: false, 
         message: 'Usuario no encontrado' 
@@ -30,24 +36,38 @@ router.post('/login', async (req, res) => {
     }
 
     const user = result[0];
+    console.log('Usuario encontrado:', {
+      id: user.Id,
+      username: user.Username,
+      hasPasswordHash: !!user.PasswordHash,
+      passwordHashLength: user.PasswordHash ? user.PasswordHash.length : 0
+    });
 
     // Verificar que el usuario tenga la propiedad PasswordHash
     if (!user || !user.PasswordHash) {
+      console.log('❌ Usuario sin PasswordHash');
       return res.status(500).json({ 
         success: false, 
         message: 'Error en la estructura de datos del usuario' 
       });
     }
 
+    console.log('Contraseña recibida:', password);
+    console.log('Hash en BD:', user.PasswordHash);
+
     // Verificar contraseña
     const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
+    console.log('¿Contraseña válida?', isValidPassword);
 
     if (!isValidPassword) {
+      console.log('❌ Contraseña incorrecta');
       return res.status(401).json({ 
         success: false, 
         message: 'Contraseña incorrecta' 
       });
     }
+
+    console.log('✅ Login exitoso');
 
     // Generar token JWT
     const token = jwt.sign(
