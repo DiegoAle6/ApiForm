@@ -17,7 +17,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // CAMBIO: Query con parámetros posicionales para MySQL
     const query = `SELECT * FROM Usuarios WHERE Username = ?`;
     const result = await executeQuery(query, [username]);
 
@@ -26,7 +25,6 @@ router.post('/login', async (req, res) => {
     console.log('Resultado de la query:', result);
     console.log('Número de usuarios encontrados:', result ? result.length : 0);
 
-    // CAMBIO: MySQL retorna el resultado directamente, no en recordset
     if (!result || result.length === 0) {
       console.log('❌ Usuario no encontrado');
       return res.status(401).json({ 
@@ -81,7 +79,6 @@ router.post('/login', async (req, res) => {
       { expiresIn: '2h' }
     );
 
-    // CAMBIO: Actualizar último acceso con sintaxis MySQL
     const updateQuery = `
       UPDATE Usuarios 
       SET UltimoAcceso = NOW() 

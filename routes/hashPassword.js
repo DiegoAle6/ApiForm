@@ -1,6 +1,3 @@
-// Script para generar hash de contraseña
-// Ejecuta este código en Node.js para generar el hash correcto
-
 const bcrypt = require('bcrypt');
 
 async function generatePasswordHash() {
@@ -24,7 +21,3 @@ async function generatePasswordHash() {
 
 // Llamar a la función
 generatePasswordHash();
-
-// También puedes usar este hash directamente:
-// $2b$10$rOvwXSfPGNFvWQyGjUOUAOcZXBiHb7wZfyGlU7mJcP2n5KOqzJHiC
-// Contraseña: admin123
